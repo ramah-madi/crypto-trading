@@ -52,7 +52,7 @@ const TrendingCoins = async () => {
         <div id='trending-coins'>
             <h4>Trending Coins</h4>
             <div id='trending-coins'>
-                <DataTable data={trendingCoins.coins.slice(0, 6) || []} columns={columns} rowKey={(coin) => coin.item.id} tableClassName='trending-coins-table' />
+                <DataTable data={trendingCoins.coins.slice(0, 6) || []} columns={columns} rowKey={(coin) => coin.item.id} tableClassName='trending-coins-table' headerCellClassName='py-3!' bodyCellClassName='py-2!' />
             </div>
         </div>
     )
