@@ -21,9 +21,13 @@ export async function fetcher<T>(endpoint: string, params?: QueryParams, revalid
     const apiKeyHeader = isPro ? 'x-cg-pro-api-key' : 'x-cg-demo-api-key';
 
     // Demo API does not support the 'interval' parameter for /ohlc endpoints
+    // and limits 'days' to 365 max (does not accept 'max' string)
     const queryParams = { ...params };
     if (!isPro && cleanEndpoint.includes('ohlc')) {
         delete queryParams.interval;
+        if (queryParams.days === 'max') {
+            queryParams.days = 365;
+        }
     }
 
     const url = qs.stringifyUrl({

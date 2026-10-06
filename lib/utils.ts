@@ -16,17 +16,22 @@ export function formatCurrency(
     return showSymbol !== false ? '$0.00' : '0.00';
   }
 
+  const absVal = Math.abs(value);
+  const defaultMaxDigits = absVal > 0 && absVal < 1 ? (absVal < 0.01 ? 6 : 4) : 2;
+  const minDigits = digits ?? 2;
+  const maxDigits = digits ?? defaultMaxDigits;
+
   if (showSymbol === undefined || showSymbol === true) {
     return value.toLocaleString(undefined, {
       style: 'currency',
       currency: currency?.toUpperCase() || 'USD',
-      minimumFractionDigits: digits ?? 2,
-      maximumFractionDigits: digits ?? 2,
+      minimumFractionDigits: minDigits,
+      maximumFractionDigits: maxDigits,
     });
   }
   return value.toLocaleString(undefined, {
-    minimumFractionDigits: digits ?? 2,
-    maximumFractionDigits: digits ?? 2,
+    minimumFractionDigits: minDigits,
+    maximumFractionDigits: maxDigits,
   });
 }
 

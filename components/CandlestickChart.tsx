@@ -10,37 +10,47 @@ const CandlestickChart = ({ children, data, coinId, height = 360, initialPeriod 
     const chartContainerRef = useRef<HTMLDivElement | null>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+    const activePeriodRef = useRef<Period>(initialPeriod);
 
-    const [loading, setLoading] = useState(false);
     const [period, setPeriod] = useState<Period>(initialPeriod);
     const [ohlcData, setOhlcData] = useState<OHLCData[]>(data ?? []);
     const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState<string | null>(null);
 
     const fetchOHLCData = async (selectedPeriod: Period) => {
-        try {
-            const { days, interval } = PERIOD_CONFIG[selectedPeriod];
+        const { days, interval } = PERIOD_CONFIG[selectedPeriod];
 
-            const newData = await fetcher<OHLCData[]>(`/coins/${coinId}/ohlc`, {
-                vs_currency: 'usd',
-                days,
-                interval,
-                precision: 'full'
-            })
-
-            setOhlcData(newData);
-        } catch (error) {
-            console.error("Failed to fetch OHLC data:", error);
-        }
+        return await fetcher<OHLCData[]>(`/coins/${coinId}/ohlc`, {
+            vs_currency: 'usd',
+            days,
+            interval,
+            precision: 'full'
+        });
     }
-
 
     const handlePeriodChange = (newPeriod: Period) => {
         if (newPeriod === period) return;
 
+        const previousPeriod = period;
+        activePeriodRef.current = newPeriod;
+
         startTransition(async () => {
-            setPeriod(newPeriod);
-            await fetchOHLCData(newPeriod);
-        })
+            try {
+                setError(null);
+                const newData = await fetchOHLCData(newPeriod);
+
+                if (activePeriodRef.current === newPeriod) {
+                    setOhlcData(newData);
+                    setPeriod(newPeriod);
+                }
+            } catch (err) {
+                console.error("Failed to fetch OHLC data:", err);
+                if (activePeriodRef.current === newPeriod) {
+                    activePeriodRef.current = previousPeriod;
+                    setError(`Failed to load ${newPeriod} data`);
+                }
+            }
+        });
     }
 
     useEffect(() => {
@@ -76,7 +86,7 @@ const CandlestickChart = ({ children, data, coinId, height = 360, initialPeriod 
             chartRef.current = null;
             candleSeriesRef.current = null;
         };
-    }, [height]);
+    }, [height, period]);
 
     useEffect(() => {
         if (!candleSeriesRef.current) return;
@@ -94,8 +104,9 @@ const CandlestickChart = ({ children, data, coinId, height = 360, initialPeriod 
                 <div className="flex-1">{children}</div>
 
                 <div className="button-group">
+                    {error && <span className="text-xs text-red-400 mr-2 font-medium">{error}</span>}
                     <span className="text-sm mx-2 font-medium text-purple-100/50">Period:</span>
-                    {PERIOD_BUTTONS.map(({ value, label }) => (<button key={value} className={period === value ? 'config-button-active' : 'config-button'} onClick={() => handlePeriodChange(value)} disabled={loading}>{label}</button>))}
+                    {PERIOD_BUTTONS.map(({ value, label }) => (<button key={value} className={period === value ? 'config-button-active' : 'config-button'} onClick={() => handlePeriodChange(value)} disabled={isPending}>{label}</button>))}
                 </div>
             </div>
 
