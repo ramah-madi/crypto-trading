@@ -17,13 +17,23 @@ export async function fetcher<T>(endpoint: string, params?: QueryParams, revalid
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     const cleanBaseUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
 
-    const url = qs.stringifyUrl({
-        url: `${cleanBaseUrl}/${cleanEndpoint}`,
-        query: params
-    }, { skipEmptyString: true, skipNull: true });
-
     const isPro = cleanBaseUrl.includes('pro-api.coingecko.com');
     const apiKeyHeader = isPro ? 'x-cg-pro-api-key' : 'x-cg-demo-api-key';
+
+    // Demo API does not support the 'interval' parameter for /ohlc endpoints
+    // and limits 'days' to 365 max (does not accept 'max' string)
+    const queryParams = { ...params };
+    if (!isPro && cleanEndpoint.includes('ohlc')) {
+        delete queryParams.interval;
+        if (queryParams.days === 'max') {
+            queryParams.days = 365;
+        }
+    }
+
+    const url = qs.stringifyUrl({
+        url: `${cleanBaseUrl}/${cleanEndpoint}`,
+        query: queryParams
+    }, { skipEmptyString: true, skipNull: true });
 
     const response = await fetch(url, {
         headers: {
