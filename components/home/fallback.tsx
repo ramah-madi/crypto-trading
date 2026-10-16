@@ -63,3 +63,66 @@ export const TrendingCoinFallback = () => {
 };
 
 export const TrendingCoinsFallback = TrendingCoinFallback;
+
+const categoryDummyRows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+const categoryColumns: DataTableColumn<number>[] = [
+    {
+        header: "Category",
+        cellClassName: "category-cell",
+        cell: () => (
+            <div className="category-skeleton skeleton animate-pulse" />
+        )
+    },
+    {
+        header: "Top Gainers",
+        cellClassName: "top-gainers-cell",
+        cell: () => (
+            <div className="flex gap-1">
+                <div className="coin-skeleton skeleton animate-pulse" />
+                <div className="coin-skeleton skeleton animate-pulse" />
+                <div className="coin-skeleton skeleton animate-pulse" />
+            </div>
+        )
+    },
+    {
+        header: "24h Change",
+        cellClassName: "change-cell",
+        cell: () => (
+            <div className="flex items-center gap-1">
+                <div className="value-skeleton-sm skeleton animate-pulse" />
+                <div className="change-icon skeleton animate-pulse" />
+            </div>
+        )
+    },
+    {
+        header: "Market Cap",
+        cellClassName: "market-cap-cell",
+        cell: () => (
+            <div className="value-skeleton-lg skeleton animate-pulse" />
+        )
+    },
+    {
+        header: "24h Volume",
+        cellClassName: "volume-cell",
+        cell: () => (
+            <div className="value-skeleton-md skeleton animate-pulse" />
+        )
+    }
+];
+
+export const CategoriesFallback = () => {
+    return (
+        <div id="categories-fallback" className="custom-scrollbar">
+            <h4>Top Categories</h4>
+            <DataTable
+                data={categoryDummyRows}
+                columns={categoryColumns}
+                rowKey={(_, index) => index}
+                tableClassName="mt-3"
+            />
+        </div>
+    );
+};
+
+export const CategoryFallback = CategoriesFallback;
