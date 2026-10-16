@@ -3,15 +3,12 @@
 import {
     Pagination,
     PaginationContent,
-    PaginationEllipsis,
     PaginationItem,
     PaginationLink,
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination"
 import { buildPageNumbers, cn, ELLIPSIS } from "@/lib/utils";
-import { spawn } from "child_process";
-import { Span } from "next/dist/trace";
 import { useRouter } from "next/navigation"
 
 
@@ -22,8 +19,8 @@ const CoinsPagination = ({ currentPage, totalPages, hasMorePages }: Pagination) 
         router.push(`/coins?page=${page}`);
     };
 
-    const pageNumbers = buildPageNumbers(currentPage, totalPages);
-    const isLastPage = !hasMorePages || currentPage === totalPages;
+    const pageNumbers = totalPages !== undefined ? buildPageNumbers(currentPage, totalPages) : [];
+    const isLastPage = totalPages !== undefined ? (!hasMorePages || currentPage >= totalPages) : !hasMorePages;
 
     return (
         <Pagination id="coins-pagination">

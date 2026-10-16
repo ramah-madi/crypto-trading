@@ -10,7 +10,10 @@ const Coins = async ({ searchParams }: NextPageProps) => {
 
     const { page } = await searchParams;
 
-    const currentPage = Number(page) || 1;
+    const parsedPage =
+        typeof page === "string" && /^\d+$/.test(page) ? Number(page) : NaN;
+    const currentPage =
+        Number.isSafeInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
     const perPage = 10;
 
     const coinsData = await fetcher<CoinMarketData[]>("/coins/markets", {
