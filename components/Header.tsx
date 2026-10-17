@@ -4,8 +4,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { SearchModel } from './SearchModel'
 
-function Header() {
+function Header({ trendingCoins = [] }: Partial<HeaderProps>) {
     const pathname = usePathname()
 
     return (
@@ -21,7 +22,7 @@ function Header() {
                 <nav>
                     <Link href="/" className={cn("nav-link", { "is-active": pathname === "/", "is-home": true })}>Home</Link>
 
-                    <p>Search Model</p>
+                    <SearchModel initialTrendingCoins={trendingCoins} />
 
                     <Link href="/coins" className={cn("nav-link", { "is-active": pathname === "/coins" })}>All Coins</Link>
                 </nav>
