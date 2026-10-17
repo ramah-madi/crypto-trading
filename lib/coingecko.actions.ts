@@ -64,11 +64,16 @@ export async function getPools(
     };
 
     if (network && contractAddress) {
-        const poolData = await fetcher<{ data: PoolData[] }>(
-            `/onchain/networks/${network}/tokens/${contractAddress}/pools`
-        );
+        try {
+            const poolData = await fetcher<{ data: PoolData[] }>(
+                `/onchain/networks/${network}/tokens/${contractAddress}/pools`
+            );
 
-        return poolData.data?.[0] ?? fallback;
+            return poolData.data?.[0] ?? fallback;
+        } catch (error) {
+            console.error("Failed to fetch pool data:", error);
+            return fallback;
+        }
     }
 
     try {
@@ -87,74 +92,142 @@ export async function getTopGainersLosers(): Promise<{
     top_gainers: TopGainersLosers[];
     top_losers: TopGainersLosers[];
 }> {
-    try {
-        const response = await fetcher<{
-            top_gainers: TopGainersLosersResponse[];
-            top_losers: TopGainersLosersResponse[];
-        }>('/coins/top_gainers_losers', {
-            vs_currency: 'usd',
-        });
+    const isPro = process.env.COINGECKO_BASE_URL?.includes('pro-api.coingecko.com') ?? false;
 
-        return {
-            top_gainers: (response.top_gainers || []).slice(0, 5).map((coin) => ({
-                id: coin.id,
-                name: coin.name,
-                symbol: coin.symbol,
-                image: coin.image,
-                price: coin.usd,
-                priceChangePercentage24h: coin.usd_24h_change,
-            })),
-            top_losers: (response.top_losers || []).slice(0, 5).map((coin) => ({
-                id: coin.id,
-                name: coin.name,
-                symbol: coin.symbol,
-                image: coin.image,
-                price: coin.usd,
-                priceChangePercentage24h: coin.usd_24h_change,
-            })),
-        };
-    } catch (error) {
-        console.error("Failed to fetch from /coins/top_gainers_losers, trying fallback:", error);
+    // /coins/top_gainers_losers is a CoinGecko Pro-only endpoint.
+    // Calling it on the Demo API returns 401 Unauthorized.
+    if (isPro) {
         try {
-            const markets = await fetcher<CoinMarketData[]>('/coins/markets', {
+            const response = await fetcher<{
+                top_gainers: TopGainersLosersResponse[];
+                top_losers: TopGainersLosersResponse[];
+            }>('/coins/top_gainers_losers', {
                 vs_currency: 'usd',
-                order: 'market_cap_desc',
-                per_page: 100,
-                page: 1,
             });
 
-            const valid = (markets || []).filter(
-                (c) => typeof c.price_change_percentage_24h === 'number'
-            );
-
-            const gainers = [...valid]
-                .sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
-                .slice(0, 5)
-                .map((coin) => ({
+            return {
+                top_gainers: (response.top_gainers || []).slice(0, 5).map((coin) => ({
                     id: coin.id,
                     name: coin.name,
                     symbol: coin.symbol,
                     image: coin.image,
-                    price: coin.current_price,
-                    priceChangePercentage24h: coin.price_change_percentage_24h,
-                }));
-
-            const losers = [...valid]
-                .sort((a, b) => a.price_change_percentage_24h - b.price_change_percentage_24h)
-                .slice(0, 5)
-                .map((coin) => ({
+                    price: coin.usd,
+                    priceChangePercentage24h: coin.usd_24h_change,
+                })),
+                top_losers: (response.top_losers || []).slice(0, 5).map((coin) => ({
                     id: coin.id,
                     name: coin.name,
                     symbol: coin.symbol,
                     image: coin.image,
-                    price: coin.current_price,
-                    priceChangePercentage24h: coin.price_change_percentage_24h,
-                }));
-
-            return { top_gainers: gainers, top_losers: losers };
-        } catch (fallbackError) {
-            console.error("Failed to fetch top gainers and losers fallback:", fallbackError);
-            return { top_gainers: [], top_losers: [] };
+                    price: coin.usd,
+                    priceChangePercentage24h: coin.usd_24h_change,
+                })),
+            };
+        } catch {
+            // Fall through to markets calculation
         }
     }
-}
+
+    try {
+        const markets = await fetcher<CoinMarketData[]>('/coins/markets', {
+            vs_currency: 'usd',
+            order: 'market_cap_desc',
+            per_page: 100,
+            page: 1,
+        });
+
+        const valid = (markets || []).filter(
+            (c) => typeof c.price_change_percentage_24h === 'number'
+        );
+
+        const gainers = [...valid]
+            .sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+            .slice(0, 5)
+            .map((coin) => ({
+                id: coin.id,
+                name: coin.name,
+                symbol: coin.symbol,
+                image: coin.image,
+                price: coin.current_price,
+                priceChangePercentage24h: coin.price_change_percentage_24h,
+            }));
+
+        const losers = [...valid]
+            .sort((a, b) => a.price_change_percentage_24h - b.price_change_percentage_24h)
+            .slice(0, 5)
+            .map((coin) => ({
+                id: coin.id,
+                name: coin.name,
+                symbol: coin.symbol,
+                image: coin.image,
+                price: coin.current_price,
+                priceChangePercentage24h: coin.price_change_percentage_24h,
+            }));
+
+        return { top_gainers: gainers, top_losers: losers };
+    } catch {
+        return { top_gainers: [], top_losers: [] };
+    }
+}
+
+export async function searchCoins(query: string): Promise<SearchCoin[]> {
+    if (!query || !query.trim()) {
+        return [];
+    }
+
+    try {
+        const response = await fetcher<{ coins: any[] }>('/search', {
+            query: query.trim(),
+        });
+
+        if (!response?.coins || !Array.isArray(response.coins)) {
+            return [];
+        }
+
+        return response.coins.map((coin: any): SearchCoin => {
+            const rawChange = coin.data?.price_change_percentage_24h;
+            const change =
+                typeof rawChange === 'number'
+                    ? rawChange
+                    : typeof rawChange?.usd === 'number'
+                    ? rawChange.usd
+                    : 0;
+
+            const rawPrice = coin.data?.price;
+            const price =
+                typeof rawPrice === 'number'
+                    ? rawPrice
+                    : typeof rawPrice === 'string'
+                    ? parseFloat(rawPrice.replace(/[^0-9.-]+/g, ''))
+                    : undefined;
+
+            return {
+                id: coin.id,
+                name: coin.name,
+                symbol: coin.symbol,
+                market_cap_rank: coin.market_cap_rank ?? null,
+                thumb: coin.thumb,
+                large: coin.large,
+                data: {
+                    price,
+                    price_change_percentage_24h: change,
+                },
+            };
+        });
+    } catch (error) {
+        console.error("Failed to search coins:", error);
+        return [];
+    }
+}
+
+export async function getTrendingCoins(): Promise<TrendingCoin[]> {
+    try {
+        const response = await fetcher<{ coins: TrendingCoin[] }>('/search/trending', undefined, 300);
+        return response?.coins || [];
+    } catch (error) {
+        console.error("Failed to fetch trending coins:", error);
+        return [];
+    }
+}
+
+
