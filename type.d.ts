@@ -217,7 +217,7 @@ interface CoinDetailsData {
     links: {
         homepage: string[];
         blockchain_site: string[];
-        subreddit_url: string;
+        subreddit_url: string | null;
     };
     tickers: Ticker[];
 }
@@ -247,13 +247,13 @@ interface Category {
     volume_24h: number;
 }
 
-interface UseCoinGeckoWebSocketProps {
+interface UseLiveCoinDataProps {
     coinId: string;
     poolId: string;
     liveInterval?: '1s' | '1m';
 }
 
-interface UseCoinGeckoWebSocketReturn {
+interface UseLiveCoinDataReturn {
     price: ExtendedPriceData | null;
     trades: Trade[];
     ohlcv: OHLCData | null;
