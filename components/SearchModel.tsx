@@ -36,10 +36,10 @@ const SearchItem = ({ coin, onSelect, isActiveName }: SearchItemProps) => {
       className='search-item'
     >
       <div className='coin-info'>
-        <Image src={coin.thumb} alt={coin.name} width={40} height={40} />
+        <Image src={coin.thumb} alt={coin.name} width={42} height={42} className='rounded-full' />
 
-        <div>
-          <p className={cn('font-bold', isActiveName && 'text-white')}>
+        <div className='coin-details'>
+          <p className='coin-title'>
             {coin.name}
           </p>
           <p className='coin-symbol'>{coin.symbol}</p>
@@ -48,16 +48,16 @@ const SearchItem = ({ coin, onSelect, isActiveName }: SearchItemProps) => {
 
       <div
         className={cn('coin-change', {
-          'text-green-500': change > 0,
-          'text-red-500': change < 0,
+          'text-[#6ee755]': change >= 0,
+          'text-[#ff5555]': change < 0,
         })}
       >
-        {change > 0 ? (
-          <TrendingUp size={14} className='text-green-500' />
+        {change >= 0 ? (
+          <TrendingUp size={16} strokeWidth={2.5} />
         ) : (
-          <TrendingDown size={14} className='text-red-500' />
+          <TrendingDown size={16} strokeWidth={2.5} />
         )}
-        <span>{formatPercentage(Math.abs(change))}</span>
+        <span className='font-semibold'>{formatPercentage(Math.abs(change))}</span>
       </div>
     </CommandItem>
   );
@@ -145,7 +145,7 @@ export const SearchModel = ({
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
-        className='dialog'
+        className='dialog w-[90vw]! sm:w-[380px]! max-w-[380px]!'
         data-search-modal
       >
         <div className='cmd-input'>
