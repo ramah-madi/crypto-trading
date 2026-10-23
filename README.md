@@ -1,6 +1,6 @@
 # 📈 CryptoTrack — Real-Time Crypto Dashboard
 
-A full-stack cryptocurrency tracking web app built with **Next.js 16**, **React 19**, and **TypeScript**. It provides real-time price data, interactive candlestick charts, coin search, trending coins, market categories, and live trade feeds — all powered by the **CoinGecko API**.
+A cryptocurrency tracking web app built with **Next.js 16**, **React 19**, and **TypeScript**. It provides real-time price data, interactive candlestick charts, coin search, trending coins, market categories, and live trade feeds — all powered by the **CoinGecko API**.
 
 ---
 
